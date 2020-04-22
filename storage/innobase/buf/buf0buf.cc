@@ -3774,13 +3774,16 @@ void buf_block_t::initialise(const page_id_t page_id, ulint zip_size)
 from a file even if it cannot be found in the buffer buf_pool. This is one
 of the functions which perform to a block a state transition NOT_USED =>
 FILE_PAGE (the other is buf_page_get_gen).
-@param[in]	page_id		page id
+@param[in,out]	space		space object
+@param[in]	offset		offset of the tablespace
 @param[in]	zip_size	ROW_FORMAT=COMPRESSED page size, or 0
 @param[in,out]	mtr		mini-transaction
 @return pointer to the block, page bufferfixed */
 buf_block_t*
-buf_page_create(const page_id_t page_id, ulint zip_size, mtr_t *mtr)
+buf_page_create(fil_space_t *space,uint32_t offset,
+                ulint zip_size, mtr_t *mtr)
 {
+  page_id_t page_id(space->id, offset);
   ut_ad(mtr->is_active());
   ut_ad(page_id.space() != 0 || !zip_size);
 
@@ -3808,6 +3811,8 @@ buf_page_create(const page_id_t page_id, ulint zip_size, mtr_t *mtr)
       btr_search_drop_page_hash_index(block);
 #endif /* BTR_CUR_HASH_ADAPT */
     if (!recv_recovery_is_on())
+    {
+      space->free_page(offset, false);
       /* FIXME: Remove the redundant lookup and avoid
       the unnecessary invocation of buf_zip_decompress().
       We may have to convert buf_page_t to buf_block_t,
@@ -3815,7 +3820,7 @@ buf_page_create(const page_id_t page_id, ulint zip_size, mtr_t *mtr)
       return buf_page_get_gen(page_id, zip_size, RW_NO_LATCH,
                               block, BUF_GET_POSSIBLY_FREED,
                               __FILE__, __LINE__, mtr);
-
+    }
     mutex_exit(&recv_sys.mutex);
     block= buf_page_get_with_no_latch(page_id, zip_size, mtr);
     mutex_enter(&recv_sys.mutex);

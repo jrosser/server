@@ -1990,6 +1990,8 @@ ibuf_remove_free_page(void)
 
 	buf_page_free(page_id, &mtr, __FILE__, __LINE__);
 
+	mtr.add_freed_offset(page_id);
+
 	ibuf_mtr_commit(&mtr);
 }
 
