@@ -653,11 +653,17 @@ struct fil_node_t {
 
   /** Close the file handle. */
   void close();
+  /** Same as close() but returns file handle instead of closing it. */
+  pfs_os_file_t detach() MY_ATTRIBUTE((warn_unused_result));
   /** Prepare to free a file from fil_system. */
-  inline void close_to_free();
+  pfs_os_file_t close_to_free(bool detach_handle= false);
 
   /** Update the data structures on I/O completion */
   inline void complete_io(bool write= false);
+
+private:
+  /** Does stuff common for close() and detach() */
+  void prepare_to_close_or_detach();
 };
 
 /** Value of fil_node_t::magic_n */
@@ -974,7 +980,8 @@ public:
 #endif
 public:
   /** Detach a tablespace from the cache and close the files. */
-  inline void detach(fil_space_t *space);
+  std::vector<pfs_os_file_t> detach(fil_space_t *space,
+                                    bool detach_handle= false);
 
 	ib_mutex_t	mutex;		/*!< The mutex protecting the cache */
 	fil_space_t*	sys_space;	/*!< The innodb_system tablespace */
@@ -1286,7 +1293,9 @@ bool fil_table_accessible(const dict_table_t* table)
 @param[in]	id		tablespace identifier
 @param[in]	if_exists	whether to ignore missing tablespace
 @return	DB_SUCCESS or error */
-dberr_t fil_delete_tablespace(ulint id, bool if_exists= false);
+dberr_t fil_delete_tablespace(ulint id, bool if_exists = false,
+			      std::vector<pfs_os_file_t>* leaked_handles
+			      = nullptr);
 
 /** Prepare to truncate an undo tablespace.
 @param[in]	space_id	undo tablespace id
