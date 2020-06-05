@@ -338,6 +338,19 @@ public:
   double to_double() const { return m_ptr ? m_ptr->to_double() : 0.0; }
   longlong to_longlong(bool unsigned_flag)
   { return m_ptr ? m_ptr->to_longlong(unsigned_flag) : 0; }
+  /*
+    Return the value as a signed or unsigned longlong, depending on the sign.
+    - Positive values are returned as unsigned.
+    - Negative values are returned as signed.
+    This is used by bit SQL operators: | & ^ ~
+    as well as by the SQL function BIT_COUNT().
+  */
+  longlong to_xlonglong() const
+  { return m_ptr ? m_ptr->to_longlong(!m_ptr->sign()) : 0; }
+  Longlong_null to_xlonglong_null()
+  {
+    return m_ptr ? Longlong_null(to_xlonglong()) : Longlong_null();
+  }
   bool to_bool() const { return m_ptr ? m_ptr->to_bool() : false; }
   String *to_string(String *to) const
   {
