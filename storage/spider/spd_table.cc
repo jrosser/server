@@ -8744,20 +8744,8 @@ TABLE_LIST *spider_get_parent_table_list(
   ha_spider *spider
 ) {
   TABLE *table = spider->get_table();
-  TABLE_LIST *current, *parent;
   DBUG_ENTER("spider_get_parent_table_list");
-  DBUG_PRINT("info",("spider table=%p", table));
-  if (table->pos_in_table_list)
-  {
-    current = table->pos_in_table_list;
-  } else {
-    current = table->intention_pos_in_table_list;
-  }
-  while ((parent = current->parent_l))
-  {
-    current = parent;
-  }
-  DBUG_RETURN(current);
+  DBUG_RETURN(table->pos_in_table_list);
 }
 
 List<Index_hint> *spider_get_index_hints(
